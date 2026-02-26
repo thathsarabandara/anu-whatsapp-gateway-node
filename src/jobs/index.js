@@ -7,7 +7,17 @@ let messageQueue = null;
 
 const buildRedisOptions = () => {
   if (config.redis.url) {
-    return config.redis.url;
+    const url = new URL(config.redis.url);
+    const dbFromUrl = url.pathname ? parseInt(url.pathname.replace('/', ''), 10) : NaN;
+
+    return {
+      redis: {
+        host: url.hostname || config.redis.host,
+        port: parseInt(url.port || `${config.redis.port}`, 10),
+        password: url.password || config.redis.password,
+        db: Number.isNaN(dbFromUrl) ? config.redis.db : dbFromUrl,
+      },
+    };
   }
 
   return {
