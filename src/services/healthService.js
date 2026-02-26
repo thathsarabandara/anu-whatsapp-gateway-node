@@ -5,7 +5,7 @@ class HealthService {
    * Check system health status
    * @returns {Promise<Object>} Health status
    */
-  async checkHealth() {
+  static async getHealth() {
     try {
       const uptime = process.uptime();
       const memoryUsage = process.memoryUsage();
@@ -30,4 +30,4 @@ class HealthService {
   }
 }
 
-module.exports = new HealthService();
+module.exports = HealthService;
