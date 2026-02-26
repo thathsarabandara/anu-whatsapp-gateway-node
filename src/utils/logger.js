@@ -44,6 +44,7 @@ class Logger {
     const logMessage = `${timestamp} [${color}${levelName}${colors.reset}] ${message}`;
     const metaStr = Object.keys(meta).length ? `\n${JSON.stringify(meta, null, 2)}` : '';
 
+    // eslint-disable-next-line no-console
     console.log(`${logMessage}${metaStr}`);
   }
 
