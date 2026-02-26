@@ -51,6 +51,23 @@ class CredentialService {
     }
   }
 
+  static async resetCredentials(phone) {
+    try {
+      const record = await WhatsAppCredential.findOne({ where: { phone } });
+      if (!record) return false;
+
+      record.credentials = null;
+      record.status = 'DISCONNECTED';
+      record.connectionStatus = 'DISCONNECTED';
+      record.lastHeartbeatAt = new Date();
+      await record.save();
+      return true;
+    } catch (error) {
+      logger.error('Failed to reset credentials', { error: error.message, phone });
+      return false;
+    }
+  }
+
   static async updateConnectionStatus(phone, status, connectionStatus = null) {
     try {
       const record = await WhatsAppCredential.findOne({ where: { phone } });
