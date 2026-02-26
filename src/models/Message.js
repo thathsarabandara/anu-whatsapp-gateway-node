@@ -35,7 +35,7 @@ const Message = sequelize.define('Message', {
     index: true,
   },
   body: {
-    type: DataTypes.LONGTEXT,
+    type: DataTypes.TEXT('long'),
     allowNull: false,
   },
   messageType: {
