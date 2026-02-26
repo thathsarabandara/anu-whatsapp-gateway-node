@@ -53,11 +53,11 @@ const QueueJob = sequelize.define('QueueJob', {
     field: 'max_attempts',
   },
   result: {
-    type: DataTypes.LONGTEXT,
+    type: DataTypes.TEXT('long'),
     allowNull: true,
   },
   error: {
-    type: DataTypes.LONGTEXT,
+    type: DataTypes.TEXT('long'),
     allowNull: true,
   },
   startedAt: {
