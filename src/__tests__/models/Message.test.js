@@ -1,163 +1,48 @@
 const Message = require('../../models/Message');
-const database = require('../../config/database');
-
-jest.mock('../../config/database');
-jest.mock('../../utils/logger');
 
 describe('Message Model', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  it('should be defined as a Sequelize model', () => {
+    expect(Message).toBeDefined();
+    expect(Message.name).toBe('Message');
   });
 
-  describe('create', () => {
-    it('should create a new message', async () => {
-      const mockResult = { insertId: 1 };
-      database.query.mockResolvedValue(mockResult);
-
-      const result = await Message.create(1, 'Hello World', 'outbound', 'ext-123');
-
-      expect(database.query).toHaveBeenCalled();
-      expect(result.id).toBe(1);
-      expect(result.userId).toBe(1);
-      expect(result.messageText).toBe('Hello World');
-    });
-
-    it('should create message without external ID', async () => {
-      const mockResult = { insertId: 1 };
-      database.query.mockResolvedValue(mockResult);
-
-      const result = await Message.create(1, 'Hello', 'inbound');
-
-      expect(result).toBeDefined();
-      expect(result.id).toBe(1);
-    });
-
-    it('should handle database errors', async () => {
-      const error = new Error('Database error');
-      database.query.mockRejectedValue(error);
-
-      await expect(Message.create(1, 'Hello', 'outbound')).rejects.toThrow('Database error');
-    });
+  it('should map to messages table', () => {
+    expect(Message.getTableName()).toBe('messages');
   });
 
-  describe('findById', () => {
-    it('should find message by ID', async () => {
-      const mockMessage = {
-        id: 1,
-        user_id: 1,
-        message_text: 'Hello',
-        direction: 'outbound',
-      };
-      database.query.mockResolvedValue([mockMessage]);
+  it('should define required attributes and defaults', () => {
+    const attrs = Message.rawAttributes;
 
-      const result = await Message.findById(1);
+    expect(attrs.id.primaryKey).toBe(true);
+    expect(attrs.toPhone.allowNull).toBe(false);
+    expect(attrs.fromPhone.allowNull).toBe(false);
+    expect(attrs.body.allowNull).toBe(false);
 
-      expect(database.query).toHaveBeenCalledWith('SELECT * FROM messages WHERE id = ?', [1]);
-      expect(result).toEqual(mockMessage);
-    });
-
-    it('should return null if message not found', async () => {
-      database.query.mockResolvedValue([]);
-
-      const result = await Message.findById(999);
-
-      expect(result).toBeNull();
-    });
+    expect(attrs.messageType.defaultValue).toBe('GENERAL');
+    expect(attrs.status.defaultValue).toBe('QUEUED');
+    expect(attrs.priority.defaultValue).toBe('NORMAL');
+    expect(attrs.retryCount.defaultValue).toBe(0);
   });
 
-  describe('findByUserId', () => {
-    it('should find messages by user ID', async () => {
-      const mockMessages = [
-        { id: 1, user_id: 1, message_text: 'Hello' },
-        { id: 2, user_id: 1, message_text: 'Hi there' },
-      ];
-      database.query.mockResolvedValue(mockMessages);
+  it('should have expected field mappings', () => {
+    const attrs = Message.rawAttributes;
 
-      const result = await Message.findByUserId(1);
-
-      expect(database.query).toHaveBeenCalled();
-      expect(result).toEqual(mockMessages);
-    });
-
-    it('should find messages with status filter', async () => {
-      const mockMessages = [{ id: 1, user_id: 1, status: 'delivered' }];
-      database.query.mockResolvedValue(mockMessages);
-
-      const result = await Message.findByUserId(1, 'delivered', 50, 0);
-
-      expect(database.query).toHaveBeenCalledWith(
-        expect.stringContaining('user_id = ?'),
-        [1, 'delivered', 50, 0],
-      );
-      expect(result).toEqual(mockMessages);
-    });
-
-    it('should support pagination', async () => {
-      const mockMessages = [];
-      database.query.mockResolvedValue(mockMessages);
-
-      await Message.findByUserId(1, null, 10, 20);
-
-      expect(database.query).toHaveBeenCalledWith(
-        expect.stringContaining('LIMIT ? OFFSET ?'),
-        [1, 10, 20],
-      );
-    });
+    expect(attrs.toPhone.field).toBe('to_phone');
+    expect(attrs.fromPhone.field).toBe('from_phone');
+    expect(attrs.conversationId.field).toBe('conversation_id');
+    expect(attrs.lmsUserId.field).toBe('lms_user_id');
+    expect(attrs.errorReason.field).toBe('error_reason');
+    expect(attrs.retryCount.field).toBe('retry_count');
+    expect(attrs.sentAt.field).toBe('sent_at');
+    expect(attrs.deliveredAt.field).toBe('delivered_at');
   });
 
-  describe('updateStatus', () => {
-    it('should update message status', async () => {
-      const mockResult = { affectedRows: 1 };
-      database.query.mockResolvedValue(mockResult);
+  it('should include expected ENUM values', () => {
+    const attrs = Message.rawAttributes;
 
-      const result = await Message.updateStatus(1, 'delivered');
-
-      expect(database.query).toHaveBeenCalledWith(
-        'UPDATE messages SET status = ? WHERE id = ?',
-        ['delivered', 1],
-      );
-      expect(result).toEqual(mockResult);
-    });
-
-    it('should handle update errors', async () => {
-      const error = new Error('Update failed');
-      database.query.mockRejectedValue(error);
-
-      await expect(Message.updateStatus(1, 'failed')).rejects.toThrow('Update failed');
-    });
-  });
-
-  describe('getStatistics', () => {
-    it('should get message statistics', async () => {
-      const mockStats = [
-        { direction: 'inbound', status: 'delivered', count: 5 },
-        { direction: 'outbound', status: 'sent', count: 3 },
-      ];
-      database.query.mockResolvedValue(mockStats);
-
-      const result = await Message.getStatistics(1);
-
-      expect(database.query).toHaveBeenCalled();
-      expect(result).toEqual(mockStats);
-    });
-
-    it('should handle statistics errors', async () => {
-      const error = new Error('Query failed');
-      database.query.mockRejectedValue(error);
-
-      await expect(Message.getStatistics(1)).rejects.toThrow('Query failed');
-    });
-  });
-
-  describe('delete', () => {
-    it('should delete message', async () => {
-      const mockResult = { affectedRows: 1 };
-      database.query.mockResolvedValue(mockResult);
-
-      const result = await Message.delete(1);
-
-      expect(database.query).toHaveBeenCalledWith('DELETE FROM messages WHERE id = ?', [1]);
-      expect(result).toEqual(mockResult);
-    });
+    expect(attrs.messageType.values).toEqual(['OTP', 'NOTIFICATION', 'CHATBOT', 'GENERAL']);
+    expect(attrs.status.values).toEqual(['QUEUED', 'SENT', 'DELIVERED', 'FAILED', 'SCHEDULED']);
+    expect(attrs.direction.values).toEqual(['INBOUND', 'OUTBOUND']);
+    expect(attrs.priority.values).toEqual(['LOW', 'NORMAL', 'HIGH']);
   });
 });
