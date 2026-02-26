@@ -34,6 +34,11 @@ const WhatsAppCredential = sequelize.define('WhatsAppCredential', {
       return null;
     },
     set(value) {
+      if (value === null) {
+        this.setDataValue('credentials', null);
+        return;
+      }
+
       if (value) {
         this.setDataValue('credentials', encryption.encryptObject(value));
       }

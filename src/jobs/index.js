@@ -6,8 +6,33 @@ const logger = require('../utils/logger');
 let messageQueue = null;
 
 const buildRedisOptions = () => {
+  const hasExplicitHost = typeof process.env.REDIS_HOST !== 'undefined';
+  const hasExplicitPort = typeof process.env.REDIS_PORT !== 'undefined';
+  const hasExplicitPassword = typeof process.env.REDIS_PASSWORD !== 'undefined';
+  const hasExplicitDb = typeof process.env.REDIS_DB !== 'undefined';
+
   if (config.redis.url) {
-    return config.redis.url;
+    const url = new URL(config.redis.url);
+    const dbFromUrl = url.pathname ? parseInt(url.pathname.replace('/', ''), 10) : NaN;
+    const redisHost = hasExplicitHost ? config.redis.host : url.hostname || config.redis.host;
+    const redisPort = hasExplicitPort
+      ? config.redis.port
+      : parseInt(url.port || `${config.redis.port}`, 10);
+    const redisPassword = hasExplicitPassword
+      ? config.redis.password
+      : url.password || config.redis.password;
+    const redisDb = hasExplicitDb || Number.isNaN(dbFromUrl)
+      ? config.redis.db
+      : dbFromUrl;
+
+    return {
+      redis: {
+        host: redisHost,
+        port: redisPort,
+        password: redisPassword,
+        db: redisDb,
+      },
+    };
   }
 
   return {
@@ -30,6 +55,7 @@ const init = async ({ messageService } = {}) => {
   }
 
   messageQueue = new Queue('messages', buildRedisOptions());
+  await messageQueue.isReady();
 
   messageQueue.process(5, async (job) => messageService.processQueuedMessage(job));
 
@@ -42,10 +68,23 @@ const init = async ({ messageService } = {}) => {
   });
 
   messageQueue.on('error', (error) => {
-    logger.error('Queue error', { error: error.message });
+    const fallback = typeof error === 'string' ? error : 'Unknown queue error';
+    const message = error?.message || fallback;
+
+    logger.error('Queue error', {
+      error: message,
+      code: error?.code || null,
+      syscall: error?.syscall || null,
+      hostname: error?.hostname || null,
+      stack: error?.stack || null,
+    });
   });
 
-  logger.info('Message queue initialized');
+  logger.info('Message queue initialized', {
+    redisHost: buildRedisOptions().redis.host,
+    redisPort: buildRedisOptions().redis.port,
+    redisDb: buildRedisOptions().redis.db,
+  });
   return messageQueue;
 };
 

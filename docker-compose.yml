@@ -20,7 +20,14 @@ services:
       - DB_NAME=whatsapp_gateway
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=redispass
       - REDIS_DB=0
+      - ENCRYPTION_KEY=0bc264519811235554bdf578d440cd9ca16e7acfa766fc424538538e4bc80070
+      - ENCRYPTION_IV=abb944e4035b435db4a337f03f3e38d1
+      - API_KEY=0bc264519811235554bdf578d40934nfiesn7acfa766fc424538538e4bc80070
+      - JWT_SECRET=0bc264519811paneyr37ns78d440cd9ca16e7acfa766fc424538538e4bc80070
+      - JWT_EXPIRY=24h
+      - CORS_ORIGIN=*
     volumes:
       - .:/app
       - /app/node_modules
@@ -77,11 +84,33 @@ services:
       - whatsapp-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "redispass", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    
+  admin:
+      image: adminer
+      container_name: whatsapp-gateway-adminer
+      ports:
+        - "8080:8080"
+      networks:
+        - whatsapp-network
+      restart: unless-stopped 
+
+  phpmyadmin:
+      image: phpmyadmin/phpmyadmin
+      container_name: whatsapp-gateway-phpmyadmin
+      environment:
+        - PMA_HOST=mysql
+        - PMA_USER=whatsapp_user
+        - PMA_PASSWORD=whatsapp_pass
+      ports:
+        - "8081:80"
+      networks:
+        - whatsapp-network
+      restart: unless-stopped
 
 volumes:
   mysql_data:

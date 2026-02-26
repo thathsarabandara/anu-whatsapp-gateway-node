@@ -6,7 +6,10 @@ const baileysService = require('../services/baileysService');
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
-  const parsed = {};
+  const parsed = {
+    phone: process.env.npm_config_phone,
+    method: process.env.npm_config_method,
+  };
 
   args.forEach((arg) => {
     if (arg.startsWith('--')) {
@@ -18,18 +21,32 @@ const parseArgs = () => {
   return parsed;
 };
 
+const printUsage = () => {
+  logger.info('Usage examples:');
+  logger.info('npm run register:phone -- --phone=94729620813 --method=qr');
+  logger.info('npm run register:phone --phone=94729620813 --method=qr');
+};
+
 const run = async () => {
   const args = parseArgs();
   const { phone, method = 'qr' } = args;
 
+  if (!phone) {
+    logger.error('Phone number is required. Use --phone=<digits>.');
+    printUsage();
+    process.exit(1);
+  }
+
   const phoneValidation = validators.validatePhoneNumber(phone);
   if (!phoneValidation.valid) {
     logger.error(phoneValidation.error);
+    printUsage();
     process.exit(1);
   }
 
   if (!['qr', 'pairing_code'].includes(method)) {
     logger.error('Invalid method. Use --method=qr or --method=pairing_code');
+    printUsage();
     process.exit(1);
   }
 
