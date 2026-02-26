@@ -7,16 +7,13 @@ const config = require('./config/config');
 const logger = require('./utils/logger');
 const errorHandler = require('./middlewares/errorHandler');
 const healthRoutes = require('./api/routes/health');
+const messageRoutes = require('./api/routes/messages');
 const jobs = require('./jobs');
 const database = require('./config/database');
 const redis = require('./config/redis');
 const databaseInit = require('./config/database-init');
 
 const app = express();
-
-// ===============================
-// Middleware Setup
-// ===============================
 
 // Security middleware
 app.use(helmet());
@@ -31,14 +28,9 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// ===============================
-// Health Check Routes
-// ===============================
 app.use('/api', healthRoutes);
+app.use('/api/messages', messageRoutes);
 
-// ===============================
-// Welcome Route
-// ===============================
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to WhatsApp Gateway API',
@@ -48,9 +40,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// ===============================
-// 404 Handler
-// ===============================
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -60,14 +49,8 @@ app.use((req, res) => {
   });
 });
 
-// ===============================
-// Error Handler
-// ===============================
 app.use(errorHandler);
 
-// ===============================
-// Server Startup
-// ===============================
 const PORT = config.app.port;
 
 const startServer = async () => {
@@ -91,7 +74,7 @@ const startServer = async () => {
 
     // Start listening
     app.listen(PORT, () => {
-      logger.info(`${config.app.name} server running`, {
+      logger.info(`${config.app.version} server running`, {
         port: PORT,
         environment: config.app.env,
         timestamp: new Date().toISOString(),
