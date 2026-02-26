@@ -1,4 +1,6 @@
 /* eslint-disable class-methods-use-this */
+// eslint-disable-next-line import/no-extraneous-dependencies
+const qrcode = require('qrcode-terminal');
 const config = require('../config/config');
 const logger = require('../utils/logger');
 const CredentialService = require('./credentialService');
@@ -8,6 +10,8 @@ class BaileysService {
     this.connections = new Map();
     this.states = new Map();
     this.registrationSessions = new Map();
+    this.intentionalDisconnects = new Set();
+    this.isShuttingDown = false;
     this.incomingHandler = null;
     this.sdk = null;
     this.isReady = false;
@@ -128,7 +132,6 @@ class BaileysService {
     const socket = makeWASocket({
       version,
       auth: state,
-      printQRInTerminal: true,
       browser: Browsers.ubuntu('WhatsApp Gateway'),
       syncFullHistory: config.whatsapp.syncFullHistory,
       markOnlineOnConnect: config.whatsapp.markOnline,
@@ -168,6 +171,9 @@ class BaileysService {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
+        qrcode.generate(qr, { small: true });
+        logger.info('QR code generated. Scan it with WhatsApp > Linked devices.', { phone });
+
         const session = this.registrationSessions.get(phone) || {};
         this.registrationSessions.set(phone, {
           ...session,
@@ -181,6 +187,7 @@ class BaileysService {
       }
 
       if (connection === 'open') {
+        this.intentionalDisconnects.delete(phone);
         this.states.set(phone, 'CONNECTED');
         await CredentialService.updateConnectionStatus(phone, 'CONNECTED', 'CONNECTED');
         const session = this.registrationSessions.get(phone) || {};
@@ -195,8 +202,12 @@ class BaileysService {
       }
 
       if (connection === 'close') {
+        const isIntentionalClose = this.isShuttingDown || this.intentionalDisconnects.has(phone);
+
         this.states.set(phone, 'DISCONNECTED');
-        await CredentialService.updateConnectionStatus(phone, 'DISCONNECTED', 'DISCONNECTED');
+        if (!isIntentionalClose) {
+          await CredentialService.updateConnectionStatus(phone, 'DISCONNECTED', 'DISCONNECTED');
+        }
         const session = this.registrationSessions.get(phone) || {};
         this.registrationSessions.set(phone, {
           ...session,
@@ -206,7 +217,11 @@ class BaileysService {
         });
 
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        const shouldReconnect = !isIntentionalClose && statusCode !== DisconnectReason.loggedOut;
+
+        if (isIntentionalClose) {
+          this.intentionalDisconnects.delete(phone);
+        }
 
         if (shouldReconnect) {
           logger.warn('Connection closed, scheduling reconnect', { phone, statusCode });
@@ -251,14 +266,20 @@ class BaileysService {
   }
 
   async registerPhone({ phone, method = 'qr' }) {
+    this.isShuttingDown = false;
+
     await CredentialService.ensurePhoneRecord(phone);
+    await CredentialService.resetCredentials(phone);
 
     const existing = this.connections.get(phone);
     if (existing) {
+      this.intentionalDisconnects.add(phone);
       try {
         await existing.logout();
       } catch (error) {
         logger.warn('Failed to logout existing phone session', { phone, error: error.message });
+      } finally {
+        this.intentionalDisconnects.delete(phone);
       }
       this.connections.delete(phone);
       this.states.delete(phone);
@@ -294,7 +315,12 @@ class BaileysService {
       return false;
     }
 
-    await socket.logout();
+    this.intentionalDisconnects.add(phone);
+    try {
+      await socket.logout();
+    } finally {
+      this.intentionalDisconnects.delete(phone);
+    }
     this.connections.delete(phone);
     this.states.delete(phone);
     await CredentialService.updateConnectionStatus(phone, 'DISCONNECTED', 'DISCONNECTED');
@@ -332,18 +358,28 @@ class BaileysService {
   }
 
   async closeAll() {
-    const sockets = [...this.connections.values()];
-    const closeTasks = sockets.map(async (socket) => {
+    this.isShuttingDown = true;
+
+    const sockets = [...this.connections.entries()];
+    const closeTasks = sockets.map(async ([phone, socket]) => {
+      this.intentionalDisconnects.add(phone);
       try {
-        await socket.logout();
+        if (typeof socket.end === 'function') {
+          await socket.end(new Error('Service shutdown'));
+        } else if (socket.ws && typeof socket.ws.close === 'function') {
+          socket.ws.close();
+        }
       } catch (error) {
         logger.warn('Failed to close socket cleanly', { error: error.message });
+      } finally {
+        this.intentionalDisconnects.delete(phone);
       }
     });
 
     await Promise.all(closeTasks);
     this.connections.clear();
     this.states.clear();
+    this.isShuttingDown = false;
   }
 }
 
