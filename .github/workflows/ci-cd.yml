@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [24.x]
 
     steps:
       - name: Checkout code
@@ -41,7 +41,7 @@ jobs:
     needs: lint
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [24.x]
 
     services:
       mysql:
@@ -166,7 +166,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '24.x'
           cache: 'npm'
 
       - name: Install dependencies

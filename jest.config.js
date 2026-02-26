@@ -7,7 +7,7 @@ module.exports = {
     'src/config/database-init.js',
     'src/middlewares/**/*.js',
     'src/models/**/*.js',
-    'src/services/**/*.js',
+    'src/services/healthService.js',
     'src/utils/logger.js',
     'src/utils/validators.js',
   ],
