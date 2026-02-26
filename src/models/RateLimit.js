@@ -3,10 +3,10 @@
  */
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { DataTypes } from 'sequelize';
-import { define } from '../config/sequelize';
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/sequelize');
 
-const RateLimit = define('RateLimit', {
+const RateLimit = sequelize.define('RateLimit', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -53,4 +53,4 @@ const RateLimit = define('RateLimit', {
   ],
 });
 
-export default RateLimit;
+module.exports = RateLimit;
