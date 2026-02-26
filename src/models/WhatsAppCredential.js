@@ -20,7 +20,7 @@ const WhatsAppCredential = sequelize.define('WhatsAppCredential', {
     index: true,
   },
   credentials: {
-    type: DataTypes.LONGTEXT,
+    type: DataTypes.TEXT('long'),
     allowNull: true,
     get() {
       const value = this.getDataValue('credentials');
