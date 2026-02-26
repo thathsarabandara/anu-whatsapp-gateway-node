@@ -3,14 +3,32 @@
   "version": "1.0.0",
   "description": "WhatsApp Gateway Node.js Application",
   "main": "src/server.js",
+  "author": "Thathsara Bandara",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --watchAll --verbose"
+    "test": "jest --watchAll --verbose --maxWorkers=1",
+    "test:ci": "jest --ci --coverage --maxWorkers=1",
+    "test:coverage": "jest --coverage --maxWorkers=1",
+    "lint": "eslint src --ext .js --max-warnings 0",
+    "lint:fix": "eslint src --ext .js --fix",
+    "format": "prettier --write \"src/**/*.js\"",
+    "lint:report": "eslint src --ext .js --format json --output-file eslint-report.json || true",
+    "build": "echo 'Build process completed'",
+    "validate": "npm run lint && npm run test:coverage"
   },
-  "keywords": ["whatsapp", "gateway", "nodejs"],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "whatsapp",
+    "gateway",
+    "nodejs",
+    "api",
+    "messaging"
+  ],
   "dependencies": {
     "express": "^4.18.2",
     "dotenv": "^16.3.1",
@@ -18,11 +36,20 @@
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "axios": "^1.6.2",
-    "joi": "^17.11.0"
+    "joi": "^17.11.0",
+    "mysql2": "^3.6.5",
+    "redis": "^4.6.10",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
     "jest": "^29.7.0",
-    "supertest": "^6.3.3"
+    "supertest": "^6.3.3",
+    "eslint": "^8.53.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-jest": "^27.6.0",
+    "jest-extended": "^4.0.2",
+    "prettier": "^3.11.0"
   }
 }
