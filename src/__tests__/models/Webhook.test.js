@@ -1,146 +1,41 @@
-// Webhook model tests - placeholder
-// These tests will be updated for Sequelize ORM
+const WebhookHistory = require('../../models/WebhookHistory');
 
-describe('Webhook Model', () => {
-  it('placeholder', () => {
-    expect(true).toBe(true);
-  });
-});
-
-describe('Webhook Model', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+describe('WebhookHistory Model', () => {
+  it('should be defined as a Sequelize model', () => {
+    expect(WebhookHistory).toBeDefined();
+    expect(WebhookHistory.name).toBe('WebhookHistory');
   });
 
-  describe('create', () => {
-    it('should create a new webhook', async () => {
-      const mockResult = { insertId: 1 };
-      database.query.mockResolvedValue(mockResult);
-
-      const result = await Webhook.create(1, 'https://example.com/webhook', 'all');
-
-      expect(database.query).toHaveBeenCalled();
-      expect(result.id).toBe(1);
-      expect(result.webhookUrl).toBe('https://example.com/webhook');
-    });
-
-    it('should create webhook with default event type', async () => {
-      const mockResult = { insertId: 1 };
-      database.query.mockResolvedValue(mockResult);
-
-      const result = await Webhook.create(1, 'https://example.com/webhook');
-
-      expect(result).toBeDefined();
-      expect(result.id).toBe(1);
-    });
-
-    it('should handle database errors', async () => {
-      const error = new Error('Database error');
-      database.query.mockRejectedValue(error);
-
-      await expect(Webhook.create(1, 'https://example.com/webhook')).rejects.toThrow(
-        'Database error',
-      );
-    });
+  it('should map to webhooks_history table', () => {
+    expect(WebhookHistory.getTableName()).toBe('webhooks_history');
   });
 
-  describe('findById', () => {
-    it('should find webhook by ID', async () => {
-      const mockWebhook = { id: 1, user_id: 1, webhook_url: 'https://example.com/webhook' };
-      database.query.mockResolvedValue([mockWebhook]);
+  it('should define required attributes', () => {
+    const attrs = WebhookHistory.rawAttributes;
 
-      const result = await Webhook.findById(1);
-
-      expect(database.query).toHaveBeenCalledWith('SELECT * FROM webhooks WHERE id = ?', [1]);
-      expect(result).toEqual(mockWebhook);
-    });
-
-    it('should return null if webhook not found', async () => {
-      database.query.mockResolvedValue([]);
-
-      const result = await Webhook.findById(999);
-
-      expect(result).toBeNull();
-    });
+    expect(attrs.eventType.allowNull).toBe(false);
+    expect(attrs.webhookUrl.allowNull).toBe(false);
   });
 
-  describe('findByUserId', () => {
-    it('should find active webhooks for user', async () => {
-      const mockWebhooks = [{ id: 1, user_id: 1, is_active: 1 }];
-      database.query.mockResolvedValue(mockWebhooks);
+  it('should define defaults and field mappings', () => {
+    const attrs = WebhookHistory.rawAttributes;
 
-      const result = await Webhook.findByUserId(1, true);
+    expect(attrs.status.defaultValue).toBe('PENDING');
+    expect(attrs.retryCount.defaultValue).toBe(0);
+    expect(attrs.targetSystem.defaultValue).toBe('LMS');
 
-      expect(database.query).toHaveBeenCalled();
-      expect(result).toEqual(mockWebhooks);
-    });
-
-    it('should find all webhooks for user when isActive is false', async () => {
-      const mockWebhooks = [
-        { id: 1, user_id: 1, is_active: 1 },
-        { id: 2, user_id: 1, is_active: 0 },
-      ];
-      database.query.mockResolvedValue(mockWebhooks);
-
-      const result = await Webhook.findByUserId(1, false);
-
-      expect(result).toEqual(mockWebhooks);
-    });
+    expect(attrs.messageId.field).toBe('message_id');
+    expect(attrs.eventType.field).toBe('event_type');
+    expect(attrs.webhookUrl.field).toBe('webhook_url');
+    expect(attrs.retryCount.field).toBe('retry_count');
+    expect(attrs.targetSystem.field).toBe('target_system');
+    expect(attrs.responseData.field).toBe('response_data');
+    expect(attrs.sentAt.field).toBe('sent_at');
   });
 
-  describe('update', () => {
-    it('should update webhook', async () => {
-      const mockResult = { affectedRows: 1 };
-      database.query.mockResolvedValue(mockResult);
+  it('should include expected status enum values', () => {
+    const attrs = WebhookHistory.rawAttributes;
 
-      const updates = { webhook_url: 'https://new.example.com/webhook' };
-      const result = await Webhook.update(1, updates);
-
-      expect(database.query).toHaveBeenCalled();
-      expect(result).toEqual(mockResult);
-    });
-
-    it('should handle update errors', async () => {
-      const error = new Error('Update failed');
-      database.query.mockRejectedValue(error);
-
-      await expect(Webhook.update(1, { webhook_url: 'https://test.com' })).rejects.toThrow(
-        'Update failed',
-      );
-    });
-  });
-
-  describe('toggleStatus', () => {
-    it('should toggle webhook status', async () => {
-      const mockResult = { affectedRows: 1 };
-      database.query.mockResolvedValue(mockResult);
-
-      const result = await Webhook.toggleStatus(1);
-
-      expect(database.query).toHaveBeenCalledWith(
-        'UPDATE webhooks SET is_active = NOT is_active WHERE id = ?',
-        [1],
-      );
-      expect(result).toEqual(mockResult);
-    });
-
-    it('should handle toggle errors', async () => {
-      const error = new Error('Toggle failed');
-      database.query.mockRejectedValue(error);
-
-      await expect(Webhook.toggleStatus(1)).rejects.toThrow('Toggle failed');
-    });
-  });
-
-  describe('delete', () => {
-    it('should delete webhook', async () => {
-      const mockResult = { affectedRows: 1 };
-      database.query.mockResolvedValue(mockResult);
-
-      const result = await Webhook.delete(1);
-
-      expect(database.query).toHaveBeenCalledWith('DELETE FROM webhooks WHERE id = ?', [1]);
-      expect(result).toEqual(mockResult);
-    });
+    expect(attrs.status.values).toEqual(['PENDING', 'SUCCESS', 'FAILED']);
   });
 });
