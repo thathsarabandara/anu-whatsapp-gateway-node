@@ -30,7 +30,7 @@ const WebhookHistory = sequelize.define('WebhookHistory', {
     field: 'webhook_url',
   },
   payload: {
-    type: DataTypes.LONGTEXT,
+    type: DataTypes.TEXT('long'),
     allowNull: true,
   },
   status: {
@@ -49,7 +49,7 @@ const WebhookHistory = sequelize.define('WebhookHistory', {
     field: 'target_system',
   },
   responseData: {
-    type: DataTypes.LONGTEXT,
+    type: DataTypes.TEXT('long'),
     field: 'response_data',
     allowNull: true,
   },
