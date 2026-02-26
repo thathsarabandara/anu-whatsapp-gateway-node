@@ -20,6 +20,7 @@ services:
       - DB_NAME=whatsapp_gateway
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=redispass
       - REDIS_DB=0
     volumes:
       - .:/app
@@ -77,7 +78,7 @@ services:
       - whatsapp-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "redispass", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
