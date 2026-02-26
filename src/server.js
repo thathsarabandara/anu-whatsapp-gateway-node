@@ -8,10 +8,13 @@ const logger = require('./utils/logger');
 const errorHandler = require('./middlewares/errorHandler');
 const healthRoutes = require('./api/routes/health');
 const messageRoutes = require('./api/routes/messages');
+const connectionRoutes = require('./api/routes/connections');
 const jobs = require('./jobs');
-const database = require('./config/database');
 const redis = require('./config/redis');
 const databaseInit = require('./config/database-init');
+const sequelize = require('./config/sequelize');
+const messageService = require('./services/messageService');
+const baileysService = require('./services/baileysService');
 
 const app = express();
 
@@ -30,6 +33,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 app.use('/api', healthRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api', connectionRoutes);
 
 app.get('/', (req, res) => {
   res.json({
@@ -57,10 +61,7 @@ const startServer = async () => {
   try {
     // Initialize database
     logger.info('Initializing database...');
-    await database.initializePool();
-    const connection = await database.getConnection();
-    await databaseInit.initialize(connection);
-    connection.release();
+    await databaseInit.initialize();
     logger.info('Database initialization completed');
 
     // Initialize Redis
@@ -69,7 +70,14 @@ const startServer = async () => {
     logger.info('Redis initialization completed');
 
     // Initialize background jobs
-    await jobs.init();
+    const queue = await jobs.init({ messageService });
+    messageService.configure({ queue, baileysService });
+    baileysService.setIncomingHandler(async (phone, message) => {
+      await messageService.handleIncomingMessage(phone, message);
+    });
+
+    // Initialize WhatsApp connections (database records first, env values as fallback)
+    await baileysService.initializeConnections();
     logger.info('Background jobs initialized');
 
     // Start listening
@@ -92,14 +100,18 @@ startServer();
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
-  await database.close();
+  await jobs.close();
+  await baileysService.closeAll();
+  await sequelize.close();
   await redis.close();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
-  await database.close();
+  await jobs.close();
+  await baileysService.closeAll();
+  await sequelize.close();
   await redis.close();
   process.exit(0);
 });
