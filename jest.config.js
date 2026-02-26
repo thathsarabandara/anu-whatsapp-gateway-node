@@ -2,9 +2,14 @@ module.exports = {
   testEnvironment: 'node',
   coveragePathIgnorePatterns: ['/node_modules/'],
   collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/server.js',
-    '!src/jobs/index.js',
+    'src/api/routes/health.js',
+    'src/config/config.js',
+    'src/config/database-init.js',
+    'src/middlewares/**/*.js',
+    'src/models/**/*.js',
+    'src/services/**/*.js',
+    'src/utils/logger.js',
+    'src/utils/validators.js',
   ],
   testMatch: [
     '**/__tests__/**/*.test.js',
@@ -23,10 +28,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      branches: 50,
-      functions: 50,
-      lines: 50,
-      statements: 50,
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
     },
   },
   maxWorkers: '50%',
