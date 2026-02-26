@@ -1,5 +1,5 @@
 /* eslint-disable class-methods-use-this */
-// eslint-disable-next-line import/no-extraneous-dependencies
+// eslint-disable-next-line import/no-unresolved
 const { v4: uuidv4 } = require('uuid');
 const { Message, Contact } = require('../models');
 const config = require('../config/config');
