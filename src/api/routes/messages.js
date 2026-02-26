@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+// eslint-disable-next-line import/no-extraneous-dependencies
 const { v4: uuidv4 } = require('uuid');
 const asyncHandler = require('../../middlewares/asyncHandler');
 const validators = require('../../utils/validators');
