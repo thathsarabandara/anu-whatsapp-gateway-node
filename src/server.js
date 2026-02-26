@@ -7,6 +7,7 @@ const config = require('./config/config');
 const logger = require('./utils/logger');
 const errorHandler = require('./middlewares/errorHandler');
 const healthRoutes = require('./api/routes/health');
+const messageRoutes = require('./api/routes/messages');
 const jobs = require('./jobs');
 const database = require('./config/database');
 const redis = require('./config/redis');
@@ -32,9 +33,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // ===============================
-// Health Check Routes
+// API Routes
 // ===============================
 app.use('/api', healthRoutes);
+app.use('/api/messages', messageRoutes);
 
 // ===============================
 // Welcome Route
@@ -91,7 +93,7 @@ const startServer = async () => {
 
     // Start listening
     app.listen(PORT, () => {
-      logger.info(`${config.app.name} server running`, {
+      logger.info(`${config.app.version} server running`, {
         port: PORT,
         environment: config.app.env,
         timestamp: new Date().toISOString(),
