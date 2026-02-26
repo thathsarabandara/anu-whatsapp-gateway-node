@@ -11,7 +11,7 @@ const router = express.Router();
  */
 router.get('/health', asyncHandler(async (req, res) => {
   logger.debug('Health check initiated');
-  const health = await healthService.checkHealth();
+  const health = await healthService.getHealth();
   res.status(200).json({
     success: true,
     data: health,

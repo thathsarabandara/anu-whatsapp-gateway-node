@@ -8,6 +8,9 @@ const logger = require('./utils/logger');
 const errorHandler = require('./middlewares/errorHandler');
 const healthRoutes = require('./api/routes/health');
 const jobs = require('./jobs');
+const database = require('./config/database');
+const redis = require('./config/redis');
+const databaseInit = require('./config/database-init');
 
 const app = express();
 
@@ -69,6 +72,19 @@ const PORT = config.app.port;
 
 const startServer = async () => {
   try {
+    // Initialize database
+    logger.info('Initializing database...');
+    await database.initializePool();
+    const connection = await database.getConnection();
+    await databaseInit.initialize(connection);
+    connection.release();
+    logger.info('Database initialization completed');
+
+    // Initialize Redis
+    logger.info('Initializing Redis...');
+    await redis.initializeClient();
+    logger.info('Redis initialization completed');
+
     // Initialize background jobs
     await jobs.init();
     logger.info('Background jobs initialized');
@@ -91,13 +107,17 @@ const startServer = async () => {
 startServer();
 
 // Handle graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  await database.close();
+  await redis.close();
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
+  await database.close();
+  await redis.close();
   process.exit(0);
 });
 
