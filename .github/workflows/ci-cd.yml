@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [24.x]
 
     steps:
       - name: Checkout code
@@ -41,7 +41,7 @@ jobs:
     needs: lint
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [24.x]
 
     services:
       mysql:
