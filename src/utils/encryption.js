@@ -7,6 +7,42 @@ const crypto = require('crypto');
 const config = require('../config/config');
 const logger = require('./logger');
 
+const binaryReplacer = (key, value) => {
+  if (Buffer.isBuffer(value)) {
+    return {
+      __binaryType: 'Buffer',
+      data: value.toString('base64'),
+    };
+  }
+
+  if (value instanceof Uint8Array) {
+    return {
+      __binaryType: 'Uint8Array',
+      data: Buffer.from(value).toString('base64'),
+    };
+  }
+
+  return value;
+};
+
+const binaryReviver = (key, value) => {
+  if (value && value.__binaryType && value.data) {
+    if (value.__binaryType === 'Buffer') {
+      return Buffer.from(value.data, 'base64');
+    }
+
+    if (value.__binaryType === 'Uint8Array') {
+      return Buffer.from(value.data, 'base64');
+    }
+  }
+
+  if (value && value.type === 'Buffer' && Array.isArray(value.data)) {
+    return Buffer.from(value.data);
+  }
+
+  return value;
+};
+
 /**
  * Parse encryption key and IV from config (hex encoded)
  */
@@ -85,7 +121,7 @@ const decrypt = (encrypted) => {
  */
 const encryptObject = (data) => {
   try {
-    const jsonString = JSON.stringify(data);
+    const jsonString = JSON.stringify(data, binaryReplacer);
     return encrypt(jsonString);
   } catch (error) {
     logger.error('Object encryption error', { error: error.message });
@@ -101,7 +137,7 @@ const encryptObject = (data) => {
 const decryptObject = (encrypted) => {
   try {
     const jsonString = decrypt(encrypted);
-    return JSON.parse(jsonString);
+    return JSON.parse(jsonString, binaryReviver);
   } catch (error) {
     logger.error('Object decryption error', { error: error.message });
     throw error;
