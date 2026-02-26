@@ -14,17 +14,23 @@ const buildRedisOptions = () => {
   if (config.redis.url) {
     const url = new URL(config.redis.url);
     const dbFromUrl = url.pathname ? parseInt(url.pathname.replace('/', ''), 10) : NaN;
+    const redisHost = hasExplicitHost ? config.redis.host : url.hostname || config.redis.host;
+    const redisPort = hasExplicitPort
+      ? config.redis.port
+      : parseInt(url.port || `${config.redis.port}`, 10);
+    const redisPassword = hasExplicitPassword
+      ? config.redis.password
+      : url.password || config.redis.password;
+    const redisDb = hasExplicitDb || Number.isNaN(dbFromUrl)
+      ? config.redis.db
+      : dbFromUrl;
 
     return {
       redis: {
-        host: hasExplicitHost ? config.redis.host : (url.hostname || config.redis.host),
-        port: hasExplicitPort
-          ? config.redis.port
-          : parseInt(url.port || `${config.redis.port}`, 10),
-        password: hasExplicitPassword ? config.redis.password : (url.password || config.redis.password),
-        db: hasExplicitDb
-          ? config.redis.db
-          : (Number.isNaN(dbFromUrl) ? config.redis.db : dbFromUrl),
+        host: redisHost,
+        port: redisPort,
+        password: redisPassword,
+        db: redisDb,
       },
     };
   }
