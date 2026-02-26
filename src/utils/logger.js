@@ -30,7 +30,7 @@ const levelColors = {
 };
 
 class Logger {
-  constructor(level = config.log.level) {
+  constructor(level = config.logging?.level || config.log?.level || 'info') {
     this.level = levels[level] || levels.info;
   }
 
@@ -65,4 +65,4 @@ class Logger {
   }
 }
 
-module.exports = new Logger(config.log.level);
+module.exports = new Logger(config.logging?.level || config.log?.level || 'info');
