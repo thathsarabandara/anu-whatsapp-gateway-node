@@ -28,6 +28,8 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
+.jest-cache/
+*.lcov
 
 # Build
 dist/
@@ -39,6 +41,8 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+mysql_data/
+redis_data/
 
 # Runtime data
 pids/
@@ -48,4 +52,13 @@ pids/
 
 # Temporary files
 tmp/
+
+# Linting and Security
+eslint-report.json
+.eslintcache
+trivy-results.sarif
+dependency-check-report.json
+
+# Git
+.git/
 temp/
