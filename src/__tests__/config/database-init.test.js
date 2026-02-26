@@ -24,7 +24,7 @@ describe('Database Initialization', () => {
   });
 
   describe('initializeTables', () => {
-    it('should create users table', async () => {
+    it('should create contacts table', async () => {
       const mockConnection = {
         execute: jest.fn().mockResolvedValue([]),
       };
@@ -33,7 +33,7 @@ describe('Database Initialization', () => {
 
       expect(mockConnection.execute).toHaveBeenCalled();
       const { mock: { calls } } = mockConnection.execute;
-      expect(calls.some(([sql]) => sql.includes('users'))).toBe(true);
+      expect(calls.some(([sql]) => sql.includes('contacts'))).toBe(true);
     });
 
     it('should create messages table', async () => {
@@ -47,7 +47,7 @@ describe('Database Initialization', () => {
       expect(calls.some(([sql]) => sql.includes('messages'))).toBe(true);
     });
 
-    it('should create webhooks table', async () => {
+    it('should create webhooks history table', async () => {
       const mockConnection = {
         execute: jest.fn().mockResolvedValue([]),
       };
@@ -55,7 +55,26 @@ describe('Database Initialization', () => {
       await databaseInit.initializeTables(mockConnection);
 
       const { mock: { calls } } = mockConnection.execute;
-      expect(calls.some(([sql]) => sql.includes('webhooks'))).toBe(true);
+      expect(calls.some(([sql]) => sql.includes('webhooks_history'))).toBe(true);
+    });
+
+    it('should create all expected tables', async () => {
+      const mockConnection = {
+        execute: jest.fn().mockResolvedValue([]),
+      };
+
+      await databaseInit.initializeTables(mockConnection);
+
+      expect(mockConnection.execute).toHaveBeenCalledTimes(7);
+      const executedSql = mockConnection.execute.mock.calls.map(([sql]) => sql).join(' ');
+
+      expect(executedSql).toContain('messages');
+      expect(executedSql).toContain('contacts');
+      expect(executedSql).toContain('conversations');
+      expect(executedSql).toContain('rate_limits');
+      expect(executedSql).toContain('webhooks_history');
+      expect(executedSql).toContain('queue_jobs');
+      expect(executedSql).toContain('whatsapp_credentials');
     });
 
     it('should handle table creation errors', async () => {
