@@ -57,6 +57,13 @@ module.exports = {
     maxRetriesPerRequest: null,
   },
 
+  // Phone number normalization
+  phone: {
+    // Default country code (digits only, no +) used when normalizing local-format numbers.
+    // E.g. '94' for Sri Lanka, '1' for USA/Canada, '44' for UK.
+    defaultCountryCode: process.env.DEFAULT_COUNTRY_CODE || '94',
+  },
+
   // WhatsApp
   whatsapp: {
     phonePrimary: process.env.WHATSAPP_PHONE_PRIMARY,
