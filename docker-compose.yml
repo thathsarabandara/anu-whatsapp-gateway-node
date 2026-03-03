@@ -94,7 +94,7 @@ services:
       image: adminer
       container_name: whatsapp-gateway-adminer
       ports:
-        - "8080:8080"
+        - "8082:8080"
       networks:
         - whatsapp-network
       restart: unless-stopped 
@@ -107,7 +107,7 @@ services:
         - PMA_USER=whatsapp_user
         - PMA_PASSWORD=whatsapp_pass
       ports:
-        - "8081:80"
+        - "8083:80"
       networks:
         - whatsapp-network
       restart: unless-stopped
