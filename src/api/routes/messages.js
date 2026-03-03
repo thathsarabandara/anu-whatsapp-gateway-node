@@ -24,6 +24,10 @@ router.post('/send', asyncHandler(async (req, res) => {
     });
   }
 
+  // Use the normalised number (digits-only, international format) for all
+  // downstream operations so that the WhatsApp JID is always well-formed.
+  const normalizedPhone = phoneValidation.formatted;
+
   const contentValidation = validators.validateMessageContent(content);
   if (!contentValidation.valid) {
     return res.status(400).json({
@@ -52,7 +56,7 @@ router.post('/send', asyncHandler(async (req, res) => {
   }
 
   const result = await messageService.queueMessage({
-    phone,
+    phone: normalizedPhone,
     content,
     messageType,
     priority,
